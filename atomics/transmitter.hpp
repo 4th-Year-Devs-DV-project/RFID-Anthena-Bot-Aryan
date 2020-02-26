@@ -106,11 +106,20 @@ using namespace std;
                        printf("\n");
                        //state.recieveCounter--;
                        state.sending = true;
-                       char *s = strstr(state.s2, "stop");      // search for string "hassasin" in buff
-                       if (s != NULL)                     // if successful then s now points at "hassasin"
+                       char *c1 = strstr(state.s2, "stop");      // search for string "hassasin" in buff
+                       if (c1 != NULL)                     // if successful then s now points at "hassasin"
                        {
                            printf("Car shall stop!!!!");
                            state.commandAvailable = true;
+                           state.isCard = true;
+                            break;
+                       }
+                       char *c2 = strstr(state.s2, "right");      // search for string "hassasin" in buff
+                       if (c2 != NULL)                     // if successful then s now points at "hassasin"
+                       {
+                           printf("Car shall take right!!!!");
+                           state.commandAvailable = true;
+                           state.isCard = false;
                             break;
                        }
                        break;
@@ -200,17 +209,18 @@ using namespace std;
 */
               for(const auto &x : get_messages<typename defs::in>(mbs)){
                 // if the button is presssed we want to send the signal to the recevier
-                printf("trans: %f\n", x );
+                printf("x issssssssssssssss: %f\n", x );
                 
                 if(x == 0 )
                   break;
 
                 state.newTag = true;
                 
-                if(x == 123)
+                if(x == 155)
                 {
                   state.flag = 1;
-                  state.s[0] = '1';
+                  state.s[0] = '2';
+                  printf("230   \n");
                   //state.counter = 2;
                   
                 }
@@ -253,9 +263,13 @@ using namespace std;
               }
                   
               double out = 0;
-              if(state.commandAvailable == true)
+              if(state.commandAvailable == true && state.isCard == true)
               {
                 out = 100;
+              }
+              else if(state.commandAvailable == true && state.isCard == false)
+              {
+                out = 200;
               }
 
               get_messages<typename defs::dataOut>(bags).push_back(out);

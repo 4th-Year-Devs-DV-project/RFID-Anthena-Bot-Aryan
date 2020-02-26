@@ -32,7 +32,7 @@
 
 using namespace cadmium;
 using namespace std;
-enum DriveState {right = 0, straight = 1, left = 2, stop = 3, unknown = 4};
+enum DriveState {right = 0, straight = 1, left = 2, stop = 3, unknown = 4, slightRight = 5, slightLeft = 6 };
 //Port definition
     struct seeedBotDriver_defs {
         //Output ports
@@ -112,12 +112,12 @@ enum DriveState {right = 0, straight = 1, left = 2, stop = 3, unknown = 4};
                 if (x == 100)
                 {
                  state.direction = 100;
-                 state.counter = 10;
+                 state.counter = 5;
                 }
-                else if (x == 105)
+                else if (x == 200)
                 {
-                 state.tagType = 2;
-                 state.counter2 = 1;
+                 state.direction = 200;
+                 state.counter = 1;
                 }
                 else
                 {
@@ -129,6 +129,15 @@ enum DriveState {right = 0, straight = 1, left = 2, stop = 3, unknown = 4};
                 }
                
               }
+              //state.centerIR =0;
+              printf("------------------------------\n");
+              printf("right: %d\n", state.rightIR);
+              printf("middleRightIR: %d\n", state.middleRightIR);
+              printf("center : %d\n", state.centerIR);
+              printf("middleLeftIR: %d\n", state.middleLeftIR);
+              printf("leftIR : %d\n", state.leftIR);
+              printf("------------------------------\n");
+              //printf("%d\n", state.rightIR);
 
               // to make the drive direction decision.
               for(const auto &x : get_messages<typename defs::rightIR>(mbs)){
@@ -144,6 +153,8 @@ enum DriveState {right = 0, straight = 1, left = 2, stop = 3, unknown = 4};
               for(const auto &x : get_messages<typename defs::centerIR>(mbs)){
                 state.centerIR = !x;
                 printf("centre\n");
+                printf("%d\n", state.centerIR);
+
               }
               for(const auto &x : get_messages<typename defs::leftIR>(mbs)){
                 state.leftIR = !x;
@@ -158,20 +169,39 @@ enum DriveState {right = 0, straight = 1, left = 2, stop = 3, unknown = 4};
                 light = x;
               }
               #endif
-              if((!(state.rightIR ^ state.leftIR ^ state.centerIR) && !(!state.rightIR && !state.leftIR && !state.centerIR)) || (state.rightIR && state.leftIR && state.centerIR)) {
+              //if((!(state.rightIR ^ state.leftIR ^ state.centerIR) && !(!state.rightIR && !state.leftIR && !state.centerIR)) || (state.rightIR && state.leftIR && state.centerIR)) {
+              if( (!state.rightIR && !state.leftIR && !state.centerIR && !state.middleRightIR && !state.middleLeftIR) || (state.rightIR && state.leftIR && state.middleRightIR && state.middleLeftIR && state.centerIR)) {
                 // This happens when no IR sensors see the line and if two or more IR sensors see the line.
+                printf("hereeeeeeeeeeee\n");
                 state.dir = DriveState::stop;
-              } else if (state.middleRightIR && state.centerIR) {
-                state.dir = DriveState::straight;
+              }else if (state.middleRightIR && state.centerIR) {
+                printf("center3\n");
+                state.dir = DriveState::slightLeft;
               } 
               else if (state.middleLeftIR && state.centerIR) {
+                state.dir = DriveState::slightRight;
+                printf("center4\n");
+              } else if (state.centerIR) {
+                printf("center2\n");
                 state.dir = DriveState::straight;
-              } 
-               else if (state.rightIR) {
+              }
+              else if (state.rightIR) {
+                printf("rigght3\n");
                 state.dir = DriveState::left;
               } else if (state.leftIR) {
+                printf("left3\n");
                 state.dir = DriveState::right;
-              } else {
+              }
+              else if (state.middleLeftIR) {
+                state.dir = DriveState::slightRight;
+                printf("left2\n");
+              } 
+              else if (state.middleRightIR) {
+                state.dir = DriveState::slightLeft;
+                printf("right2\n");
+              } 
+                else {
+                printf("none\n");
                 state.dir = DriveState::straight;
               }
               #ifdef SCARED_OF_THE_DARK
@@ -204,27 +234,47 @@ enum DriveState {right = 0, straight = 1, left = 2, stop = 3, unknown = 4};
                   leftMotorOut1 = 0;
                   leftMotorOut2 = 0;
               }
+              else if(state.direction == 200 )
+              {
+                rightMotorOut1 = 0.25;
+                rightMotorOut2 = 0;
+                leftMotorOut1 = 0;
+                leftMotorOut2 = 0; 
+              }
+                 
               else
               {
                 switch(state.dir){
                   case DriveState::right:
-                    rightMotorOut1 = 0.2;
+                    rightMotorOut1 = 0.25;
                     rightMotorOut2 = 0;
                     leftMotorOut1 = 0;
+                    leftMotorOut2 = 0;                
+                  break;
+                  case DriveState::slightRight:
+                    rightMotorOut1 = 0.2;
+                    rightMotorOut2 = 0;
+                    leftMotorOut1 = 0.1;
                     leftMotorOut2 = 0;                
                   break;
 
                   case DriveState::left:
                     rightMotorOut1 = 0;
                     rightMotorOut2 = 0;
+                    leftMotorOut1 = 0.25;
+                    leftMotorOut2 = 0;
+                  break;
+                  case DriveState::slightLeft:
+                    rightMotorOut1 = 0.1;
+                    rightMotorOut2 = 0;
                     leftMotorOut1 = 0.2;
                     leftMotorOut2 = 0;
                   break;
 
                   case DriveState::straight:
-                    rightMotorOut1 = 0.3;
+                    rightMotorOut1 = 0.2;
                     rightMotorOut2 = 0;
-                    leftMotorOut1 = 0.3;
+                    leftMotorOut1 = 0.2;
                     leftMotorOut2 = 0;
                   break;
 
